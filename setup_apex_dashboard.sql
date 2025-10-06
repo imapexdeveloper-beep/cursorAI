@@ -2,7 +2,7 @@
 -- Project: Teacher Dashboard (Oracle APEX)
 -- Description: Core schema objects for teacher profiles,
 --              class schedule, and weekly timetable tracking
--- Author: Major Syed Muhammad Qasim
+-- Author:Syed 
 -- ============================================================
 
 -- 1. Table for storing teacher profiles
