@@ -178,6 +178,9 @@ create or replace package body task_workflow as
       select user_id into v_senior from users where role_code='SENIOR' and is_active=1 fetch first 1 row only;
       notify(v_senior, p_task_id, 'Task requires senior approval', 'Approve or reject');
     else
+      if p_comments is null or trim(p_comments) is null then
+        raise_application_error(-20008, 'Rejection requires a comment');
+      end if;
       -- Rejected by TL -> REJECTED and notify TM to rework
       update tasks set status_code='REJECTED', updated_at = systimestamp, updated_by = p_tl_user where task_id = p_task_id;
       record_approval(p_task_id, 1, p_tl_user, 'REJECT', p_comments);
@@ -207,6 +210,9 @@ create or replace package body task_workflow as
       end if;
       notify(v_tl, p_task_id, 'Task fully approved', 'Approved by Senior');
     else
+      if p_comments is null or trim(p_comments) is null then
+        raise_application_error(-20009, 'Rejection requires a comment');
+      end if;
       update tasks set status_code='REJECTED', updated_at = systimestamp, updated_by = p_senior where task_id = p_task_id;
       record_approval(p_task_id, 2, p_senior, 'REJECT', p_comments);
       if v_tm is not null then
