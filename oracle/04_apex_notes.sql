@@ -1,0 +1,46 @@
+-- APEX wiring notes (execute where appropriate as page processes)
+-- Security: Map APEX users to rows in USERS by USERS.USERNAME = :APP_USER.
+-- Create an application-level authorization scheme for each role using a SQL expression:
+--   exists (select 1 from v_users where username = :APP_USER and role_code = 'PM')
+--   ... role_code in ('TL','TM','SENIOR') accordingly.
+
+-- Pages overview
+--  1. PM Dashboard (role PM) - create tasks
+--     - Form: Create Task (title, description, assigned_tl)
+--       Process (PL/SQL):
+--          declare v_task_id number; begin
+--            task_workflow.pm_create_task(:P1_TITLE, :P1_DESCRIPTION, :P1_ASSIGNED_TL,
+--                                         (select user_id from users where username=:APP_USER),
+--                                         v_task_id);
+--            :P1_TASK_ID := v_task_id;
+--          end;
+--  2. TL Inbox (role TL) - list tasks where assigned_tl_id = current TL
+--     - Button Assign to Member -> Modal form to pick TM from same team
+--       Process:
+--          task_workflow.tl_assign_member(:P2_TASK_ID, :P2_TM_ID,
+--              (select user_id from users where username=:APP_USER));
+--     - Row action Review when status = READY_FOR_REVIEW -> approve/reject with comments
+--       Process:
+--          task_workflow.tl_review(:P2_TASK_ID,
+--              (select user_id from users where username=:APP_USER), :P2_DECISION, :P2_COMMENTS);
+--  3. TM Worklist (role TM) - list tasks where assigned_tm_id = current TM
+--     - Show status; when IN_PROGRESS allow Submit for Review button
+--       Process:
+--          task_workflow.tm_submit_for_review(:P3_TASK_ID,
+--              (select user_id from users where username=:APP_USER));
+--  4. Senior Inbox (role SENIOR) - list tasks where exists step 1 approved and status PENDING
+--       Process:
+--          task_workflow.senior_review(:P4_TASK_ID,
+--              (select user_id from users where username=:APP_USER), :P4_DECISION, :P4_COMMENTS);
+--  5. Notifications - classic report on NOTIFICATIONS for :APP_USER with mark-as-read DA
+
+-- Useful LOVs
+--  LOV_TL: select full_name d, user_id r from v_users where role_code='TL' order by 1
+--  LOV_TM_BY_TL: select u.full_name d, u.user_id r
+--                 from v_users u join v_users tl on tl.username = :APP_USER and tl.role_code='TL' and u.team_id = tl.team_id
+--                 where u.role_code='TM' order by 1
+
+-- Reports Filters by status
+--  NEW, IN_PROGRESS, READY_FOR_REVIEW, PENDING, APPROVED, REJECTED, CANCELLED
+
+-- Row display for TM page shows APPROVED when both approvals recorded or status APPROVED.
