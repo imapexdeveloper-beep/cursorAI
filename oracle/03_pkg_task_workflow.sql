@@ -92,6 +92,8 @@ create or replace package body task_workflow as
     p_tl_user     in users.user_id%type
   ) is
     v_tl number;
+    v_tl_team number;
+    v_tm_team number;
   begin
     assert_role(p_tl_user, 'TL');
     assert_role(p_assigned_tm, 'TM');
@@ -99,6 +101,13 @@ create or replace package body task_workflow as
     v_tl := get_tl_for_task(p_task_id);
     if v_tl is null or v_tl <> p_tl_user then
       raise_application_error(-20002, 'Only task''s TL can assign member');
+    end if;
+
+    -- Ensure the TM belongs to the TL's team
+    select team_id into v_tl_team from users where user_id = p_tl_user;
+    select team_id into v_tm_team from users where user_id = p_assigned_tm;
+    if v_tl_team is null or v_tm_team is null or v_tl_team <> v_tm_team then
+      raise_application_error(-20006, 'TL can only assign a TM from the same team');
     end if;
 
     update tasks
@@ -117,11 +126,16 @@ create or replace package body task_workflow as
   ) is
     v_tm number;
     v_tl number;
+    v_status varchar2(30);
   begin
     assert_role(p_tm_user, 'TM');
-    select assigned_tm_id, assigned_tl_id into v_tm, v_tl from tasks where task_id = p_task_id;
+    select assigned_tm_id, assigned_tl_id, status_code into v_tm, v_tl, v_status from tasks where task_id = p_task_id;
     if v_tm is null or v_tm <> p_tm_user then
       raise_application_error(-20003, 'Only the assigned TM can submit');
+    end if;
+
+    if v_status not in ('IN_PROGRESS','REJECTED') then
+      raise_application_error(-20007, 'Task must be IN_PROGRESS or REJECTED to submit');
     end if;
 
     update tasks set status_code='READY_FOR_REVIEW', updated_at = systimestamp, updated_by = p_tm_user
