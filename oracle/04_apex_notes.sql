@@ -5,13 +5,13 @@
 --   ... role_code in ('TL','TM','SENIOR') accordingly.
 
 -- Pages overview
---  1. PM Dashboard (role PM) - create projects and tasks
+--  1. PM Dashboard (role PM) - create tasks
 --     - Form: Create Task (title, description, assigned_tl)
 --       Process (PL/SQL):
 --          declare v_task_id number; begin
 --            task_workflow.pm_create_task(:P1_TITLE, :P1_DESCRIPTION, :P1_ASSIGNED_TL,
 --                                         (select user_id from users where username=:APP_USER),
---                                         :P1_PROJECT_ID, v_task_id);
+--                                         v_task_id);
 --            :P1_TASK_ID := v_task_id;
 --          end;
 --  2. TL Inbox (role TL) - list tasks where assigned_tl_id = current TL

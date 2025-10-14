@@ -37,25 +37,20 @@ order by team_id, rn;
 
 commit;
 
-prompt Sample project and task for smoke test...
+prompt Sample task for smoke test...
 -- Map PM and first TL/TM ids for demo
 declare
   v_pm users.user_id;
   v_tl users.user_id;
   v_tm users.user_id;
-  v_project_id projects.project_id;
   v_task_id tasks.task_id;
 begin
   select user_id into v_pm from users where role_code='PM' fetch first 1 row only;
   select user_id into v_tl from users where role_code='TL' and team_id = 1 fetch first 1 row only;
   select user_id into v_tm from users where role_code='TM' and team_id = 1 fetch first 1 row only;
 
-  insert into projects (title, description, created_by, assigned_tl_id)
-  values ('Demo Project', 'Demo project seeded', v_pm, v_tl)
-  returning project_id into v_project_id;
-
-  insert into tasks (project_id, title, description, created_by, assigned_tl_id, assigned_tm_id)
-  values (v_project_id, 'Initial Task', 'Demo task seeded', v_pm, v_tl, v_tm)
+  insert into tasks (title, description, created_by, assigned_tl_id, assigned_tm_id)
+  values ('Initial Task', 'Demo task seeded', v_pm, v_tl, v_tm)
   returning task_id into v_task_id;
 
   commit;

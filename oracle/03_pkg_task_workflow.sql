@@ -5,7 +5,6 @@ create or replace package task_workflow as
     p_description   in tasks.description%type,
     p_assigned_tl   in users.user_id%type,
     p_created_by    in users.user_id%type,
-    p_project_id    in projects.project_id%type default null,
     p_task_id       out tasks.task_id%type
   );
 
@@ -73,15 +72,14 @@ create or replace package body task_workflow as
     p_description   in tasks.description%type,
     p_assigned_tl   in users.user_id%type,
     p_created_by    in users.user_id%type,
-    p_project_id    in projects.project_id%type default null,
     p_task_id       out tasks.task_id%type
   ) is
   begin
     assert_role(p_created_by, 'PM');
     assert_role(p_assigned_tl, 'TL');
 
-    insert into tasks(project_id, title, description, status_code, created_by, assigned_tl_id)
-    values (p_project_id, p_title, p_description, 'NEW', p_created_by, p_assigned_tl)
+    insert into tasks(title, description, status_code, created_by, assigned_tl_id)
+    values (p_title, p_description, 'NEW', p_created_by, p_assigned_tl)
     returning task_id into p_task_id;
 
     -- Notify TL
